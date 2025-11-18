@@ -150,12 +150,14 @@
             margin: 6px 0;
             font-size: 12px;
             gap: 10px;
+            align-items: flex-start;
         }
 
         .info-label {
             font-weight: 600;
             min-width: 80px;
             flex-shrink: 0;
+            padding-top: 2px;
         }
 
         .info-value {
@@ -164,6 +166,19 @@
             flex: 1;
             text-align: right;
             font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .info-value a {
+            color: #00aaff;
+            text-decoration: none;
+            border-bottom: 1px solid #00aaff;
+            transition: color 0.2s;
+        }
+
+        .info-value a:active {
+            color: #008cff;
+            border-bottom-color: #008cff;
         }
 
         .prescriptions {
@@ -199,6 +214,7 @@
             text-decoration: none;
             color: inherit;
             font-size: 24px;
+            border: none;
         }
 
         .modal-backdrop {
@@ -446,7 +462,7 @@
         <div class="modal">
             <h2>Doctor Access</h2>
             <p>Enter your access code</p>
-           <input type="password" id="codeInput" placeholder="Access code" autocomplete="off">
+            <input type="password" id="codeInput" placeholder="Access code" autocomplete="off">
             <div class="btn-group" style="margin: 0; gap: 8px;">
                 <button class="btn btn-primary" style="flex: 1; margin: 0;" onclick="submitCode()">Unlock</button>
                 <button class="btn" style="flex: 1; margin: 0;" onclick="closeModal()">Cancel</button>
@@ -589,6 +605,36 @@
             return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
         }
 
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function makeURLsClickable(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const parts = text.split(urlRegex);
+            const fragment = document.createDocumentFragment();
+
+            parts.forEach(part => {
+                if (isValidURL(part)) {
+                    const link = document.createElement("a");
+                    link.href = part;
+                    link.target = "_blank";
+                    link.rel = "noopener";
+                    link.textContent = part.substring(0, 40) + (part.length > 40 ? "..." : "");
+                    fragment.appendChild(link);
+                } else {
+                    fragment.appendChild(document.createTextNode(part));
+                }
+            });
+
+            return fragment;
+        }
+
         function displayResults(rawData) {
             showPage("infoPage");
             document.getElementById("infoTime").textContent = new Date().toLocaleString();
@@ -644,14 +690,46 @@
                 } else {
                     const fieldDiv = document.createElement("div");
                     fieldDiv.className = "info-field";
-                    fieldDiv.innerHTML = `<span class="info-label">${escapeHTML(key)}:</span><span class="info-value">${escapeHTML(value)}</span>`;
+
+                    const labelSpan = document.createElement("span");
+                    labelSpan.className = "info-label";
+                    labelSpan.textContent = key;
+
+                    const valueSpan = document.createElement("span");
+                    valueSpan.className = "info-value";
+
+                    // Check if value contains URLs
+                    if (isValidURL(value) || value.includes("http")) {
+                        valueSpan.appendChild(makeURLsClickable(value));
+                    } else {
+                        valueSpan.textContent = value;
+                    }
+
+                    fieldDiv.appendChild(labelSpan);
+                    fieldDiv.appendChild(valueSpan);
                     infoContainer.appendChild(fieldDiv);
                 }
             });
 
             const rawDiv = document.createElement("div");
             rawDiv.className = "info-field";
-            rawDiv.innerHTML = `<span class="info-label">Raw:</span><span class="info-value" style="font-size:10px;word-break:break-all;">${escapeHTML(rawData)}</span>`;
+            const rawLabel = document.createElement("span");
+            rawLabel.className = "info-label";
+            rawLabel.textContent = "Raw:";
+
+            const rawValue = document.createElement("span");
+            rawValue.className = "info-value";
+            rawValue.style.fontSize = "10px";
+            rawValue.style.wordBreak = "break-all";
+
+            if (rawData.includes("http")) {
+                rawValue.appendChild(makeURLsClickable(rawData));
+            } else {
+                rawValue.textContent = rawData;
+            }
+
+            rawDiv.appendChild(rawLabel);
+            rawDiv.appendChild(rawValue);
             infoContainer.appendChild(rawDiv);
         }
 

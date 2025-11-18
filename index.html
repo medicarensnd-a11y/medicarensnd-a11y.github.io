@@ -1,659 +1,762 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Medicare QR Scanner — Patient / Doctor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Medicare QR Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-  <style>
-    :root {
-      --bg: #0f0f14;
-      --glass: rgba(255,255,255,0.08);
-      --glass2: rgba(255,255,255,0.04);
-      --accent: #00aaff;
-      --accent2: #008cff;
-      --text: #fff;
-      --muted: #b8c0c7;
-      --muted2: #8f9aa3;
-      --radius: 14px;
-    }
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
 
-    * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f0f14;
+            color: #fff;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
 
-    body {
-      font-family: "Inter", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-    }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 16px 0 4px;
+        }
 
-    .app {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 20px;
-      min-height: 100vh;
-    }
+        .subtitle {
+            text-align: center;
+            color: #b8c0c7;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
 
-    .card {
-      background: var(--glass);
-      backdrop-filter: blur(10px);
-      padding: 20px;
-      border-radius: var(--radius);
-      box-shadow: 0 10px 35px rgba(0,0,0,0.4);
-      margin-top: 20px;
-    }
+        .page {
+            display: none;
+            flex: 1;
+        }
 
-    h1 {
-      margin: 10px 0 4px;
-      font-size: clamp(20px, 5vw, 26px);
-      text-align: center;
-      font-weight: 600;
-    }
+        .page.active {
+            display: flex;
+            flex-direction: column;
+        }
 
-    .lead {
-      text-align: center;
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-    .btn {
-      padding: 10px 16px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: var(--glass2);
-      color: #fff;
-      font-weight: 500;
-      cursor: pointer;
-      transition: 0.2s;
-      font-size: 14px;
-    }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            margin: 6px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-    .btn:hover { background: rgba(255,255,255,0.15); }
-    .btn:active { opacity: 0.7; }
+        .btn:active {
+            opacity: 0.6;
+        }
 
-    .btn.primary {
-      background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
-      border: none;
-    }
+        .btn-primary {
+            background: linear-gradient(90deg, #00aaff 0%, #008cff 100%);
+            border: none;
+        }
 
-    .btn.primary:hover { opacity: 0.85; }
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+        }
 
-    nav {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+            margin: 12px auto;
+            background: #000;
+            object-fit: cover;
+        }
 
-    .page { display: none; }
-    .page.active { display: block; }
+        .video-container {
+            position: relative;
+            max-width: 400px;
+            margin: 12px auto;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
 
-    .video-square {
-      width: 100%;
-      max-width: 420px;
-      margin: 20px auto;
-      aspect-ratio: 1/1;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #000;
-      position: relative;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            object-fit: cover;
+        }
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+        .status {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #b8c0c7;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            z-index: 10;
+            pointer-events: none;
+        }
 
-    .scan-indicator {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(0,0,0,0.55);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      color: var(--muted);
-    }
+        .info-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin: 6px 0;
+            font-size: 12px;
+            gap: 10px;
+        }
 
-    .fields {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 15px;
-    }
+        .info-label {
+            font-weight: 600;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 12px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
+        .info-value {
+            color: #b8c0c7;
+            word-break: break-word;
+            flex: 1;
+            text-align: right;
+            font-size: 11px;
+        }
 
-    @media (min-width: 480px) {
-      .field { flex-direction: row; }
-    }
+        .prescriptions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
 
-    .label {
-      font-weight: 600;
-      min-width: 140px;
-    }
+        .prescription-item {
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-    .value {
-      color: var(--muted);
-      word-break: break-word;
-    }
+        .prescription-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
 
-    .value.none {
-      color: var(--muted2);
-      font-style: italic;
-    }
+        .prescription-item a {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: inherit;
+            font-size: 24px;
+        }
 
-    .thumbs {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
 
-    .thumbs img {
-      width: 90px;
-      height: 90px;
-      border-radius: 8px;
-      object-fit: cover;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
+        .modal-backdrop.active {
+            display: flex;
+        }
 
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-    .modal-backdrop.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
+        .modal {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            width: 90%;
+            max-width: 340px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
 
-    .modal {
-      width: 90%;
-      max-width: 420px;
-      padding: 20px;
-      background: var(--glass);
-      border-radius: 14px;
-      backdrop-filter: blur(10px);
-    }
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: var(--glass2);
-      margin-top: 10px;
-      color: #fff;
-      font-family: inherit;
-    }
+        .modal p {
+            font-size: 12px;
+            color: #b8c0c7;
+            margin-bottom: 12px;
+        }
 
-    input::placeholder { color: var(--muted2); }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 13px;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
 
-    .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 15px;
-    }
+        input::placeholder {
+            color: #8f9aa3;
+        }
 
-    footer {
-      text-align: center;
-      margin: 30px 0 60px;
-      color: var(--muted2);
-      font-size: 13px;
-    }
-  </style>
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #00aaff;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 11px;
+            margin: 6px 0;
+            min-height: 14px;
+        }
+
+        footer {
+            text-align: center;
+            color: #8f9aa3;
+            font-size: 11px;
+            margin-top: 20px;
+            padding-bottom: 16px;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header-info > div {
+            flex: 1;
+        }
+
+        .header-info strong {
+            font-size: 13px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .header-info span {
+            font-size: 11px;
+            color: #b8c0c7;
+        }
+
+        .home-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .home-buttons .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 20px;
+                margin: 12px 0 4px;
+            }
+
+            .subtitle {
+                font-size: 11px;
+            }
+
+            .card {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                margin: 4px;
+            }
+
+            .info-field {
+                padding: 8px;
+                font-size: 11px;
+                margin: 4px 0;
+            }
+
+            .info-label {
+                min-width: 70px;
+            }
+
+            .info-value {
+                font-size: 10px;
+            }
+
+            .prescription-item {
+                width: 60px;
+                height: 60px;
+            }
+
+            video {
+                margin: 8px auto;
+            }
+
+            .modal {
+                width: 95%;
+                padding: 16px;
+            }
+
+            .home-buttons .btn {
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Medicare QR</h1>
+        <p class="subtitle">Patient & Doctor Access</p>
 
-<div class="app">
-  <header>
-    <h1>Medicare QR Scanner</h1>
-    <p class="lead">Scan QR → View patient info. Doctor mode unlocks prescriptions.</p>
-  </header>
+        <!-- HOME PAGE -->
+        <div class="page active" id="homePage">
+            <div class="card">
+                <div class="home-buttons">
+                    <button class="btn btn-primary" onclick="startPatient()">👤 Patient Mode</button>
+                    <button class="btn" onclick="startDoctor()">👨‍⚕️ Doctor Mode</button>
+                </div>
+                <p style="text-align: center; font-size: 11px; color: #b8c0c7; margin: 12px 0 0;">
+                    QR Format: {"name": "John", "age": "40"}
+                </p>
+            </div>
+        </div>
 
-  <!-- HOME PAGE -->
-  <div class="card page active" id="homePage">
-    <nav>
-      <button class="btn primary" id="btnPatient">👤 Regular Mode</button>
-      <button class="btn" id="btnDoctor">👨‍⚕️ Doctor Mode</button>
-    </nav>
-    <p style="text-align:center;margin-top:12px;color:var(--muted);font-size:13px;">
-      QR code expects JSON like: <code>{"name": "John", "age": "40"}</code>
-    </p>
-  </div>
+        <!-- SCANNER PAGE -->
+        <div class="page" id="scannerPage">
+            <div class="card">
+                <div class="header-info">
+                    <div>
+                        <strong id="modeTitle">Scanner</strong>
+                        <span id="modeHint"></span>
+                    </div>
+                    <button class="btn" onclick="goHome()">Home</button>
+                </div>
+            </div>
 
-  <!-- SCANNER PAGE -->
-  <div class="card page" id="scannerPage">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-      <div>
-        <strong id="modeTitle">Scanner</strong><br>
-        <span style="font-size:13px;color:var(--muted);" id="modeHint"></span>
-      </div>
-      <button class="btn" id="btnBack">← Home</button>
+            <div class="video-container">
+                <video id="video" autoplay playsinline muted></video>
+                <div class="status" id="status">Idle</div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" id="startBtn" onclick="startScanning()">Start Scan</button>
+                <button class="btn" id="pauseBtn" style="display: none;" onclick="togglePause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- INFO PAGE -->
+        <div class="page" id="infoPage">
+            <div class="card">
+                <div class="header-info">
+                    <div>
+                        <strong style="font-size: 13px;">Patient Info</strong>
+                        <span id="infoTime"></span>
+                    </div>
+                    <button class="btn" onclick="rescan()">Scan Again</button>
+                </div>
+            </div>
+
+            <div id="infoContainer" style="flex: 1; overflow-y: auto;"></div>
+            <div id="prescContainer"></div>
+
+            <div class="card" style="margin-top: auto;">
+                <p style="font-size: 10px; color: #8f9aa3; margin: 0;">
+                    ✓ All processing stays on your device. No cloud upload.
+                </p>
+            </div>
+        </div>
+
+        <footer>Built with care • 2025</footer>
     </div>
 
-    <div class="video-square">
-      <div class="scan-indicator" id="scanIndicator">Idle</div>
-      <video id="video" autoplay playsinline muted></video>
+    <!-- DOCTOR MODAL -->
+    <div class="modal-backdrop" id="doctorModal">
+        <div class="modal">
+            <h2>Doctor Access</h2>
+            <p>Enter your access code</p>
+            <input type="password" id="codeInput" placeholder="Access code" autocomplete="off" inputmode="numeric">
+            <div class="btn-group" style="margin: 0; gap: 8px;">
+                <button class="btn btn-primary" style="flex: 1; margin: 0;" onclick="submitCode()">Unlock</button>
+                <button class="btn" style="flex: 1; margin: 0;" onclick="closeModal()">Cancel</button>
+            </div>
+            <div class="error" id="codeError"></div>
+        </div>
     </div>
 
-    <div class="controls">
-      <button class="btn primary" id="startScanBtn">Start Scan</button>
-      <button class="btn" id="pauseBtn" style="display:none;">Pause</button>
-      <button class="btn" id="switchBtn" style="display:none;">Switch Camera</button>
-    </div>
-  </div>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-  <!-- INFO PAGE -->
-  <div class="card page" id="infoPage">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-      <div>
-        <strong>Patient Info</strong><br>
-        <span style="font-size:13px;color:var(--muted);" id="infoSub"></span>
-      </div>
-      <button class="btn" id="btnRescan">Scan Again</button>
-    </div>
+    <script>
+        // ========== CONFIG ==========
+        const DOCTOR_CODES = ["6kdw", "1wq9", "67sq"];
+        const SCAN_COOLDOWN = 800;
+        const CANVAS_SIZE = 480;
 
-    <div class="fields" id="fieldsContainer"></div>
-    <div id="prescriptions"></div>
+        // ========== STATE ==========
+        let state = {
+            mode: "patient",
+            doctorUnlocked: false,
+            isScanning: false,
+            isPaused: false,
+            lastScanTime: 0,
+            stream: null,
+            animFrameId: null
+        };
 
-    <p style="font-size:13px;color:var(--muted);margin-top:15px;">
-      All processing stays on your device. No data is sent anywhere.
-    </p>
-  </div>
+        // ========== DOM ELEMENTS ==========
+        const video = document.getElementById("video");
+        const status = document.getElementById("status");
+        const modeTitle = document.getElementById("modeTitle");
+        const modeHint = document.getElementById("modeHint");
+        const doctorModal = document.getElementById("doctorModal");
+        const codeInput = document.getElementById("codeInput");
+        const codeError = document.getElementById("codeError");
+        const infoContainer = document.getElementById("infoContainer");
+        const prescContainer = document.getElementById("prescContainer");
 
-  <footer>Built with care.</footer>
-</div>
+        // ========== CANVAS SETUP ==========
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-<!-- DOCTOR MODAL -->
-<div id="doctorModal" class="modal-backdrop">
-  <div class="modal">
-    <h3>Doctor Access</h3>
-    <p style="color:var(--muted)">Enter access code to unlock prescriptions.</p>
-    <input type="password" id="accessCode" placeholder="Access code" autocomplete="off">
-    <div style="display:flex;gap:10px;margin-top:12px;">
-      <button class="btn primary" id="submitCode">Unlock</button>
-      <button class="btn" id="cancelCode">Cancel</button>
-    </div>
-    <p id="codeMsg" style="margin-top:8px;color:#ff6b6b;"></p>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-
-<script>
-  // CONFIG
-  const DOCTOR_CODES = ["6kdw", "1wq9", "67sq"];
-  const SCAN_COOLDOWN = 1200;
-  const CANVAS = document.createElement("canvas");
-  const CTX = CANVAS.getContext("2d");
-
-  // STATE
-  let state = {
-    mode: "regular",
-    isDoctor: false,
-    isScanning: false,
-    lastScanTime: 0,
-    stream: null,
-    devices: [],
-    currentDeviceIndex: 0,
-    animationId: null
-  };
-
-  // DOM ELEMENTS
-  const pages = {
-    home: document.getElementById("homePage"),
-    scanner: document.getElementById("scannerPage"),
-    info: document.getElementById("infoPage")
-  };
-
-  const video = document.getElementById("video");
-  const scanIndicator = document.getElementById("scanIndicator");
-  const fieldsContainer = document.getElementById("fieldsContainer");
-  const prescriptionsDiv = document.getElementById("prescriptions");
-  const modeTitle = document.getElementById("modeTitle");
-  const modeHint = document.getElementById("modeHint");
-
-  const btn = {
-    patient: document.getElementById("btnPatient"),
-    doctor: document.getElementById("btnDoctor"),
-    back: document.getElementById("btnBack"),
-    rescan: document.getElementById("btnRescan"),
-    startScan: document.getElementById("startScanBtn"),
-    pause: document.getElementById("pauseBtn"),
-    switchCam: document.getElementById("switchBtn")
-  };
-
-  const modal = {
-    backdrop: document.getElementById("doctorModal"),
-    code: document.getElementById("accessCode"),
-    submit: document.getElementById("submitCode"),
-    cancel: document.getElementById("cancelCode"),
-    msg: document.getElementById("codeMsg")
-  };
-
-  // UTILS
-  function escapeHTML(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  function isImageUrl(url) {
-    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-  }
-
-  function parseQRData(raw) {
-    try {
-      const obj = JSON.parse(raw);
-      if (typeof obj !== "object" || Array.isArray(obj) || obj === null) return [];
-      return Object.entries(obj).map(([k, v]) => ({
-        label: k,
-        value: String(v)
-      }));
-    } catch (e) {
-      console.warn("Invalid JSON:", raw);
-      return [];
-    }
-  }
-
-  // PAGE NAVIGATION
-  function showPage(name) {
-    Object.values(pages).forEach(p => p.classList.remove("active"));
-    if (pages[name]) pages[name].classList.add("active");
-  }
-
-  function setMode(isDoctor) {
-    state.mode = isDoctor ? "doctor" : "regular";
-    modeTitle.textContent = isDoctor ? "Doctor Scanner" : "Patient Scanner";
-    modeHint.textContent = isDoctor 
-      ? (state.isDoctor ? "✓ Unlocked" : "🔒 Locked - Enter code")
-      : "Regular access";
-  }
-
-  // MODAL
-  function showModal(show = true) {
-    modal.backdrop.classList.toggle("show", show);
-    if (show) {
-      modal.code.value = "";
-      modal.msg.textContent = "";
-      setTimeout(() => modal.code.focus(), 100);
-    }
-  }
-
-  modal.backdrop.addEventListener("click", (e) => {
-    if (e.target === modal.backdrop) showModal(false);
-  });
-
-  // CAMERA CONTROL
-  async function stopCamera() {
-    if (state.stream) {
-      state.stream.getTracks().forEach(track => track.stop());
-      state.stream = null;
-    }
-  }
-
-  async function startCamera(deviceId = null) {
-    await stopCamera();
-    
-    const constraints = {
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 1280 },
-        aspectRatio: { ideal: 1 }
-      }
-    };
-
-    if (deviceId) {
-      constraints.video.deviceId = { exact: deviceId };
-    } else {
-      constraints.video.facingMode = { ideal: "environment" };
-    }
-
-    try {
-      state.stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = state.stream;
-      await video.play();
-      return true;
-    } catch (err) {
-      scanIndicator.textContent = "📷 Camera not available";
-      console.error("Camera error:", err);
-      return false;
-    }
-  }
-
-  async function listDevices() {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      state.devices = devices.filter(d => d.kind === "videoinput");
-      btn.switchCam.style.display = state.devices.length > 1 ? "block" : "none";
-    } catch (err) {
-      console.error("Device enumeration error:", err);
-    }
-  }
-
-  // SCANNING
-  function stopScanning() {
-    if (state.animationId) {
-      cancelAnimationFrame(state.animationId);
-      state.animationId = null;
-    }
-    state.isScanning = false;
-  }
-
-  function scanLoop() {
-    if (!state.isScanning) return;
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      CANVAS.width = video.videoWidth;
-      CANVAS.height = video.videoHeight;
-      CTX.drawImage(video, 0, 0);
-      
-      const imageData = CTX.getImageData(0, 0, CANVAS.width, CANVAS.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (code?.data) {
-        const now = Date.now();
-        if (now - state.lastScanTime > SCAN_COOLDOWN) {
-          state.lastScanTime = now;
-          handleQRDetected(code.data);
-          return;
+        // ========== PAGE NAVIGATION ==========
+        function showPage(pageId) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.getElementById(pageId).classList.add("active");
         }
-      }
-    }
 
-    state.animationId = requestAnimationFrame(scanLoop);
-  }
+        // ========== CAMERA CONTROL ==========
+        async function startCamera() {
+            try {
+                state.stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                });
+                video.srcObject = state.stream;
+                return true;
+            } catch (error) {
+                status.textContent = "❌ Camera blocked";
+                console.error("Camera error:", error);
+                return false;
+            }
+        }
 
-  function handleQRDetected(data) {
-    stopScanning();
-    stopCamera();
-    const fields = parseQRData(data);
-    displayInfo(fields, data);
-  }
+        function stopCamera() {
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+                state.stream = null;
+            }
+        }
 
-  // INFO DISPLAY
-  function displayInfo(fields, rawData) {
-    showPage("info");
-    document.getElementById("infoSub").textContent = "Scanned " + new Date().toLocaleString();
-    fieldsContainer.innerHTML = "";
-    prescriptionsDiv.innerHTML = "";
+        // ========== SCANNING LOOP ==========
+        function scanQR() {
+            if (!state.isScanning) return;
 
-    const DOCTOR_KEYS = ["prescription", "prescriptions", "rx"];
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const w = Math.min(video.videoWidth, CANVAS_SIZE);
+                const h = Math.min(video.videoHeight, CANVAS_SIZE);
 
-    fields.forEach(({ label, value }) => {
-      const isDoctor = state.mode === "doctor" && state.isDoctor;
-      const isDoctorField = isDoctor && DOCTOR_KEYS.includes(label.toLowerCase());
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(video, 0, 0, w, h);
 
-      const field = document.createElement("div");
-      field.className = "field";
+                const imageData = ctx.getImageData(0, 0, w, h);
+                const qrCode = jsQR(imageData.data, w, h);
 
-      if (isDoctorField) {
-        const urls = value.split(/[\s,|]+/).filter(Boolean);
-        
-        const header = document.createElement("div");
-        header.className = "field";
-        header.innerHTML = `<div class="label">Prescriptions:</div><div class="value">${urls.length} file(s)</div>`;
-        prescriptionsDiv.appendChild(header);
+                if (qrCode && qrCode.data) {
+                    const now = Date.now();
+                    if (now - state.lastScanTime > SCAN_COOLDOWN) {
+                        state.lastScanTime = now;
+                        handleQRDetected(qrCode.data);
+                        return;
+                    }
+                }
+            }
 
-        const container = document.createElement("div");
-        container.className = "thumbs";
+            state.animFrameId = requestAnimationFrame(scanQR);
+        }
 
-        urls.forEach(url => {
-          const link = document.createElement("a");
-          link.href = url;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
+        function stopScanning() {
+            state.isScanning = false;
+            if (state.animFrameId) {
+                cancelAnimationFrame(state.animFrameId);
+                state.animFrameId = null;
+            }
+        }
 
-          if (isImageUrl(url)) {
-            const img = document.createElement("img");
-            img.src = url;
-            img.alt = "Prescription";
-            link.appendChild(img);
-          } else {
-            const text = document.createElement("span");
-            text.style.padding = "10px";
-            text.textContent = url.substring(0, 20) + "...";
-            link.appendChild(text);
-          }
-          container.appendChild(link);
+        // ========== QR HANDLER ==========
+        function handleQRDetected(rawData) {
+            stopScanning();
+            stopCamera();
+            displayResults(rawData);
+        }
+
+        // ========== PARSE & DISPLAY ==========
+        function parseQRData(raw) {
+            try {
+                const obj = JSON.parse(raw);
+                if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return [];
+                return Object.entries(obj).map(([key, value]) => ({
+                    key,
+                    value: String(value)
+                }));
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function escapeHTML(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function isImageURL(url) {
+            return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+        }
+
+        function displayResults(rawData) {
+            showPage("infoPage");
+            document.getElementById("infoTime").textContent = new Date().toLocaleString();
+
+            infoContainer.innerHTML = "";
+            prescContainer.innerHTML = "";
+
+            const fields = parseQRData(rawData);
+            const doctorFieldKeys = ["prescription", "prescriptions", "rx"];
+
+            fields.forEach(({ key, value }) => {
+                const isDoctor = state.mode === "doctor" && state.doctorUnlocked;
+                const isDoctorField = doctorFieldKeys.includes(key.toLowerCase().trim());
+
+                if (isDoctor && isDoctorField) {
+                    const urls = value.split(/[\s,|]+/).filter(Boolean);
+                    if (urls.length === 0) return;
+
+                    const titleDiv = document.createElement("div");
+                    titleDiv.className = "info-field";
+                    titleDiv.innerHTML = `<span class="info-label">Prescriptions:</span><span class="info-value">${urls.length} file(s)</span>`;
+                    prescContainer.appendChild(titleDiv);
+
+                    const container = document.createElement("div");
+                    container.className = "prescriptions";
+
+                    urls.forEach(url => {
+                        const item = document.createElement("div");
+                        item.className = "prescription-item";
+
+                        if (isImageURL(url)) {
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.target = "_blank";
+                            link.rel = "noopener";
+                            const img = document.createElement("img");
+                            img.src = url;
+                            img.alt = "Prescription";
+                            link.appendChild(img);
+                            item.appendChild(link);
+                        } else {
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.target = "_blank";
+                            link.rel = "noopener";
+                            link.textContent = "📄";
+                            item.appendChild(link);
+                        }
+                        container.appendChild(item);
+                    });
+
+                    prescContainer.appendChild(container);
+                } else {
+                    const fieldDiv = document.createElement("div");
+                    fieldDiv.className = "info-field";
+                    fieldDiv.innerHTML = `<span class="info-label">${escapeHTML(key)}:</span><span class="info-value">${escapeHTML(value)}</span>`;
+                    infoContainer.appendChild(fieldDiv);
+                }
+            });
+
+            const rawDiv = document.createElement("div");
+            rawDiv.className = "info-field";
+            rawDiv.innerHTML = `<span class="info-label">Raw:</span><span class="info-value" style="font-size:10px;word-break:break-all;">${escapeHTML(rawData)}</span>`;
+            infoContainer.appendChild(rawDiv);
+        }
+
+        // ========== UI EVENTS ==========
+        function startPatient() {
+            state.mode = "patient";
+            state.doctorUnlocked = false;
+            modeTitle.textContent = "Patient Scanner";
+            modeHint.textContent = "Regular access";
+            showPage("scannerPage");
+            status.textContent = "Idle";
+            document.getElementById("startBtn").style.display = "block";
+            document.getElementById("pauseBtn").style.display = "none";
+        }
+
+        function startDoctor() {
+            state.mode = "doctor";
+            modeTitle.textContent = "Doctor Scanner";
+            modeHint.textContent = state.doctorUnlocked ? "✓ Unlocked" : "🔒 Locked";
+            doctorModal.classList.add("active");
+            codeInput.value = "";
+            codeError.textContent = "";
+            setTimeout(() => codeInput.focus(), 100);
+        }
+
+        function closeModal() {
+            doctorModal.classList.remove("active");
+        }
+
+        function submitCode() {
+            const code = codeInput.value.trim();
+            if (DOCTOR_CODES.includes(code)) {
+                state.doctorUnlocked = true;
+                closeModal();
+                modeHint.textContent = "✓ Unlocked";
+                showPage("scannerPage");
+                status.textContent = "Idle";
+                document.getElementById("startBtn").style.display = "block";
+                document.getElementById("pauseBtn").style.display = "none";
+            } else {
+                codeError.textContent = "❌ Incorrect code";
+                codeInput.value = "";
+            }
+        }
+
+        function goHome() {
+            stopScanning();
+            stopCamera();
+            showPage("homePage");
+        }
+
+        async function startScanning() {
+            status.textContent = "Scanning…";
+            if (await startCamera()) {
+                state.isScanning = true;
+                state.isPaused = false;
+                document.getElementById("startBtn").style.display = "none";
+                document.getElementById("pauseBtn").style.display = "block";
+                document.getElementById("pauseBtn").textContent = "Pause";
+                scanQR();
+            }
+        }
+
+        function togglePause() {
+            if (state.isPaused) {
+                state.isScanning = true;
+                state.isPaused = false;
+                status.textContent = "Scanning…";
+                document.getElementById("pauseBtn").textContent = "Pause";
+                scanQR();
+            } else {
+                stopScanning();
+                state.isPaused = true;
+                stopCamera();
+                status.textContent = "⏸ Paused";
+                document.getElementById("pauseBtn").textContent = "Resume";
+            }
+        }
+
+        async function rescan() {
+            infoContainer.innerHTML = "";
+            prescContainer.innerHTML = "";
+            showPage("scannerPage");
+            status.textContent = "Idle";
+            document.getElementById("startBtn").style.display = "block";
+            document.getElementById("pauseBtn").style.display = "none";
+        }
+
+        // ========== KEYBOARD SHORTCUTS ==========
+        codeInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") submitCode();
         });
 
-        prescriptionsDiv.appendChild(container);
-      } else {
-        field.innerHTML = `<div class="label">${escapeHTML(label)}:</div><div class="value">${escapeHTML(value)}</div>`;
-        fieldsContainer.appendChild(field);
-      }
-    });
+        doctorModal.addEventListener("click", (e) => {
+            if (e.target === doctorModal) closeModal();
+        });
 
-    const rawField = document.createElement("div");
-    rawField.className = "field";
-    rawField.innerHTML = `<div class="label">Raw Data:</div><div class="value" style="font-size:12px;font-family:monospace;">${escapeHTML(rawData)}</div>`;
-    fieldsContainer.appendChild(rawField);
-  }
+        // ========== CLEANUP ==========
+        window.addEventListener("beforeunload", () => {
+            stopScanning();
+            stopCamera();
+        });
 
-  // EVENT LISTENERS
-  btn.patient.addEventListener("click", async () => {
-    state.isDoctor = false;
-    setMode(false);
-    showPage("scanner");
-    scanIndicator.textContent = "Ready";
-    await listDevices();
-  });
-
-  btn.doctor.addEventListener("click", () => {
-    setMode(true);
-    showModal(true);
-  });
-
-  modal.submit.addEventListener("click", async () => {
-    const code = modal.code.value.trim();
-    if (DOCTOR_CODES.includes(code)) {
-      state.isDoctor = true;
-      showModal(false);
-      showPage("scanner");
-      scanIndicator.textContent = "Ready";
-      await listDevices();
-    } else {
-      modal.msg.textContent = "❌ Incorrect code. Try again.";
-      modal.code.value = "";
-    }
-  });
-
-  modal.cancel.addEventListener("click", () => showModal(false));
-
-  modal.code.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") modal.submit.click();
-  });
-
-  btn.back.addEventListener("click", () => {
-    stopScanning();
-    stopCamera();
-    showPage("home");
-  });
-
-  btn.startScan.addEventListener("click", async () => {
-    scanIndicator.textContent = "Scanning...";
-    await listDevices();
-    await startCamera(state.devices[0]?.deviceId);
-    state.isScanning = true;
-    btn.pause.style.display = "block";
-    btn.startScan.style.display = "none";
-    scanLoop();
-  });
-
-  btn.pause.addEventListener("click", async () => {
-    if (state.isScanning) {
-      stopScanning();
-      stopCamera();
-      btn.pause.textContent = "Resume";
-      scanIndicator.textContent = "Paused";
-    } else {
-      scanIndicator.textContent = "Scanning...";
-      await startCamera(state.devices[state.currentDeviceIndex]?.deviceId);
-      state.isScanning = true;
-      btn.pause.textContent = "Pause";
-      scanLoop();
-    }
-  });
-
-  btn.switchCam.addEventListener("click", async () => {
-    if (state.devices.length > 1) {
-      state.currentDeviceIndex = (state.currentDeviceIndex + 1) % state.devices.length;
-      await startCamera(state.devices[state.currentDeviceIndex].deviceId);
-    }
-  });
-
-  btn.rescan.addEventListener("click", async () => {
-    fieldsContainer.innerHTML = "";
-    prescriptionsDiv.innerHTML = "";
-    showPage("scanner");
-    scanIndicator.textContent = "Scanning...";
-    await startCamera(state.devices[0]?.deviceId);
-    state.isScanning = true;
-    scanLoop();
-  });
-
-  // CLEANUP
-  window.addEventListener("beforeunload", () => {
-    stopScanning();
-    stopCamera();
-  });
-
-  // INIT
-  showPage("home");
-</script>
-
+        // ========== INIT ==========
+        showPage("homePage");
+    </script>
 </body>
 </html>
